@@ -46,7 +46,7 @@ jobs:
         #${{ github.event.inputs.startup_sh }} 
     - name: set up ssh 
       continue-on-error: true 
-      #uses: mxschmitt/action-tmate@v3
+      #uses: mxschmitt/action-tmate@v3  #
       #timeout-minutes: ${{ github.event.inputs.timeout }}
       run: |
         echo 'finish .... ' 
